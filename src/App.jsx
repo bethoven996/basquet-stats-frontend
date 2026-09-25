@@ -15,9 +15,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import "./App.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import "./App.css";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const COLORES_TIROS = ["#E8631C", "#4FA184", "#C68E4E"];
 const COLORES_COMPARAR = ["#E8631C", "#7C5CFC", "#4FA184"];
@@ -68,7 +70,16 @@ function App() {
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
   const [logueando, setLogueando] = useState(false);
+
   const [modalCrearUsuario, setModalCrearUsuario] = useState(false);
+  const [nuevoUsuarioForm, setNuevoUsuarioForm] = useState({
+    username: "",
+    password: "",
+  });
+  const [errorCrearUsuario, setErrorCrearUsuario] = useState("");
+  const [exitoCrearUsuario, setExitoCrearUsuario] = useState("");
+  const [creandoUsuario, setCreandoUsuario] = useState(false);
+
   const [modalPartido, setModalPartido] = useState(false);
   const [nuevoPartido, setNuevoPartido] = useState({
     fecha: "",
@@ -79,13 +90,6 @@ function App() {
   });
   const [guardandoPartido, setGuardandoPartido] = useState(false);
   const [errorPartido, setErrorPartido] = useState("");
-  const [nuevoUsuarioForm, setNuevoUsuarioForm] = useState({
-    username: "",
-    password: "",
-  });
-  const [errorCrearUsuario, setErrorCrearUsuario] = useState("");
-  const [exitoCrearUsuario, setExitoCrearUsuario] = useState("");
-  const [creandoUsuario, setCreandoUsuario] = useState(false);
 
   const porPagina = 50;
 
@@ -93,14 +97,14 @@ function App() {
     cargarJugadores();
 
     axios
-      .get("http://localhost:8000/equipos")
+      .get(`${API_URL}/equipos`)
       .then((response) => setEquipos(response.data))
       .catch((error) => console.error("Error trayendo equipos:", error));
 
     cargarEstadisticas();
 
     axios
-      .get("http://localhost:8000/partidos")
+      .get(`${API_URL}/partidos`)
       .then((response) => setPartidos(response.data))
       .catch((error) => console.error("Error trayendo partidos:", error));
   }, []);
@@ -111,14 +115,14 @@ function App() {
 
   const cargarJugadores = () => {
     axios
-      .get("http://localhost:8000/jugadores")
+      .get(`${API_URL}/jugadores`)
       .then((response) => setJugadores(response.data))
       .catch((error) => console.error("Error trayendo jugadores:", error));
   };
 
   const cargarEstadisticas = () => {
     axios
-      .get("http://localhost:8000/estadisticas")
+      .get(`${API_URL}/estadisticas`)
       .then((response) => setEstadisticas(response.data))
       .catch((error) => console.error("Error trayendo estadísticas:", error));
   };
@@ -149,7 +153,7 @@ function App() {
     setLoginError("");
 
     axios
-      .post("http://localhost:8000/login", loginForm)
+      .post(`${API_URL}/login`, loginForm)
       .then((response) => {
         const nuevoToken = response.data.access_token;
         localStorage.setItem("token", nuevoToken);
@@ -167,155 +171,8 @@ function App() {
     localStorage.removeItem("token");
     setToken(null);
   };
-  const abrirModalPartido = () => {
-    if (!token) {
-      abrirLogin();
-      return;
-    }
-    setNuevoPartido({
-      fecha: "",
-      equipo_local_id: "",
-      equipo_visitante_id: "",
-      resultado_local: "",
-      resultado_visitante: "",
-    });
-    setErrorPartido("");
-    setModalPartido(true);
-  };
 
-  const actualizarCampoPartido = (campo, valor) => {
-    setNuevoPartido((prev) => ({ ...prev, [campo]: valor }));
-  };
-
-  const guardarPartido = () => {
-    const {
-      fecha,
-      equipo_local_id,
-      equipo_visitante_id,
-      resultado_local,
-      resultado_visitante,
-    } = nuevoPartido;
-
-    if (!fecha || !equipo_local_id || !equipo_visitante_id) {
-      setErrorPartido(
-        "Fecha, equipo local y equipo visitante son obligatorios.",
-      );
-      return;
-    }
-    if (equipo_local_id === equipo_visitante_id) {
-      setErrorPartido("El equipo local y el visitante no pueden ser el mismo.");
-      return;
-    }
-
-    setGuardandoPartido(true);
-    setErrorPartido("");
-
-    const payload = {
-      fecha,
-      equipo_local_id: Number(equipo_local_id),
-      equipo_visitante_id: Number(equipo_visitante_id),
-      resultado_local: resultado_local ? Number(resultado_local) : null,
-      resultado_visitante: resultado_visitante
-        ? Number(resultado_visitante)
-        : null,
-    };
-
-    axios
-      .post("http://localhost:8000/partidos", payload, headerAuth())
-      .then(() => {
-        axios
-          .get("http://localhost:8000/partidos")
-          .then((response) => setPartidos(response.data));
-        setGuardandoPartido(false);
-        setModalPartido(false);
-      })
-      .catch((error) => {
-        console.error("Error creando partido:", error);
-        if (error.response?.status === 401) {
-          setErrorPartido("Tu sesión expiró. Volvé a iniciar sesión.");
-          cerrarSesion();
-        } else {
-          setErrorPartido("No se pudo guardar el partido.");
-        }
-        setGuardandoPartido(false);
-      });
-  };
   const crearUsuario = () => {
-    const abrirModalPartido = () => {
-      if (!token) {
-        abrirLogin();
-        return;
-      }
-      setNuevoPartido({
-        fecha: "",
-        equipo_local_id: "",
-        equipo_visitante_id: "",
-        resultado_local: "",
-        resultado_visitante: "",
-      });
-      setErrorPartido("");
-      setModalPartido(true);
-    };
-
-    const actualizarCampoPartido = (campo, valor) => {
-      setNuevoPartido((prev) => ({ ...prev, [campo]: valor }));
-    };
-
-    const guardarPartido = () => {
-      const {
-        fecha,
-        equipo_local_id,
-        equipo_visitante_id,
-        resultado_local,
-        resultado_visitante,
-      } = nuevoPartido;
-
-      if (!fecha || !equipo_local_id || !equipo_visitante_id) {
-        setErrorPartido(
-          "Fecha, equipo local y equipo visitante son obligatorios.",
-        );
-        return;
-      }
-      if (equipo_local_id === equipo_visitante_id) {
-        setErrorPartido(
-          "El equipo local y el visitante no pueden ser el mismo.",
-        );
-        return;
-      }
-
-      setGuardandoPartido(true);
-      setErrorPartido("");
-
-      const payload = {
-        fecha,
-        equipo_local_id: Number(equipo_local_id),
-        equipo_visitante_id: Number(equipo_visitante_id),
-        resultado_local: resultado_local ? Number(resultado_local) : null,
-        resultado_visitante: resultado_visitante
-          ? Number(resultado_visitante)
-          : null,
-      };
-
-      axios
-        .post("http://localhost:8000/partidos", payload, headerAuth())
-        .then(() => {
-          axios
-            .get("http://localhost:8000/partidos")
-            .then((response) => setPartidos(response.data));
-          setGuardandoPartido(false);
-          setModalPartido(false);
-        })
-        .catch((error) => {
-          console.error("Error creando partido:", error);
-          if (error.response?.status === 401) {
-            setErrorPartido("Tu sesión expiró. Volvé a iniciar sesión.");
-            cerrarSesion();
-          } else {
-            setErrorPartido("No se pudo guardar el partido.");
-          }
-          setGuardandoPartido(false);
-        });
-    };
     if (!nuevoUsuarioForm.username || !nuevoUsuarioForm.password) {
       setErrorCrearUsuario("Completá usuario y contraseña.");
       return;
@@ -325,7 +182,7 @@ function App() {
     setExitoCrearUsuario("");
 
     axios
-      .post("http://localhost:8000/usuarios", nuevoUsuarioForm, headerAuth())
+      .post(`${API_URL}/usuarios`, nuevoUsuarioForm, headerAuth())
       .then(() => {
         setExitoCrearUsuario(`Usuario "${nuevoUsuarioForm.username}" creado.`);
         setNuevoUsuarioForm({ username: "", password: "" });
@@ -345,7 +202,7 @@ function App() {
     setSubiendoFoto(true);
 
     return axios
-      .post(`http://localhost:8000/jugadores/${jugadorId}/foto`, formData, {
+      .post(`${API_URL}/jugadores/${jugadorId}/foto`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -436,7 +293,7 @@ function App() {
     };
 
     axios
-      .post("http://localhost:8000/jugadores", payload, headerAuth())
+      .post(`${API_URL}/jugadores`, payload, headerAuth())
       .then(async (response) => {
         const jugadorCreado = response.data;
 
@@ -466,7 +323,7 @@ function App() {
               : null,
           };
           await axios.post(
-            "http://localhost:8000/estadisticas",
+            `${API_URL}/estadisticas`,
             statsPayload,
             headerAuth(),
           );
@@ -744,6 +601,11 @@ function App() {
     );
   };
 
+  const jugadorActual = jugadorSeleccionado
+    ? jugadores.find((j) => j.id === jugadorSeleccionado.id) ||
+      jugadorSeleccionado
+    : null;
+
   const exportarPerfilPDF = (jugador, perfil) => {
     const doc = new jsPDF();
 
@@ -809,10 +671,80 @@ function App() {
 
     doc.save(`${jugador.nombre.replace(/\s+/g, "_")}_perfil.pdf`);
   };
-  const jugadorActual = jugadorSeleccionado
-    ? jugadores.find((j) => j.id === jugadorSeleccionado.id) ||
-      jugadorSeleccionado
-    : null;
+
+  const abrirModalPartido = () => {
+    if (!token) {
+      abrirLogin();
+      return;
+    }
+    setNuevoPartido({
+      fecha: "",
+      equipo_local_id: "",
+      equipo_visitante_id: "",
+      resultado_local: "",
+      resultado_visitante: "",
+    });
+    setErrorPartido("");
+    setModalPartido(true);
+  };
+
+  const actualizarCampoPartido = (campo, valor) => {
+    setNuevoPartido((prev) => ({ ...prev, [campo]: valor }));
+  };
+
+  const guardarPartido = () => {
+    const {
+      fecha,
+      equipo_local_id,
+      equipo_visitante_id,
+      resultado_local,
+      resultado_visitante,
+    } = nuevoPartido;
+
+    if (!fecha || !equipo_local_id || !equipo_visitante_id) {
+      setErrorPartido(
+        "Fecha, equipo local y equipo visitante son obligatorios.",
+      );
+      return;
+    }
+    if (equipo_local_id === equipo_visitante_id) {
+      setErrorPartido("El equipo local y el visitante no pueden ser el mismo.");
+      return;
+    }
+
+    setGuardandoPartido(true);
+    setErrorPartido("");
+
+    const payload = {
+      fecha,
+      equipo_local_id: Number(equipo_local_id),
+      equipo_visitante_id: Number(equipo_visitante_id),
+      resultado_local: resultado_local ? Number(resultado_local) : null,
+      resultado_visitante: resultado_visitante
+        ? Number(resultado_visitante)
+        : null,
+    };
+
+    axios
+      .post(`${API_URL}/partidos`, payload, headerAuth())
+      .then(() => {
+        axios
+          .get(`${API_URL}/partidos`)
+          .then((response) => setPartidos(response.data));
+        setGuardandoPartido(false);
+        setModalPartido(false);
+      })
+      .catch((error) => {
+        console.error("Error creando partido:", error);
+        if (error.response?.status === 401) {
+          setErrorPartido("Tu sesión expiró. Volvé a iniciar sesión.");
+          cerrarSesion();
+        } else {
+          setErrorPartido("No se pudo guardar el partido.");
+        }
+        setGuardandoPartido(false);
+      });
+  };
 
   return (
     <div className="app">
@@ -1213,36 +1145,6 @@ function App() {
                                   </label>
                                 )}
                               </div>
-                              <div className="perfil-avatar-wrap">
-                                <img
-                                  src={avatarUrl(jugadorActual)}
-                                  alt={jugadorActual.nombre}
-                                  width="64"
-                                  height="64"
-                                  className="avatar"
-                                />
-                                {token && (
-                                  <label className="cambiar-foto">
-                                    {subiendoFoto
-                                      ? "Subiendo…"
-                                      : "Cambiar foto"}
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      style={{ display: "none" }}
-                                      disabled={subiendoFoto}
-                                      onChange={(e) => {
-                                        if (e.target.files[0]) {
-                                          subirFoto(
-                                            jugadorActual.id,
-                                            e.target.files[0],
-                                          );
-                                        }
-                                      }}
-                                    />
-                                  </label>
-                                )}
-                              </div>
 
                               <button
                                 className="btn-pdf"
@@ -1255,6 +1157,7 @@ function App() {
                               >
                                 Exportar PDF
                               </button>
+
                               <div className="perfil-stats">
                                 <div>
                                   <strong>{jugadorActual.edad ?? "-"}</strong>
@@ -1473,6 +1376,7 @@ function App() {
           </div>
         </div>
       )}
+
       {modalCrearUsuario && (
         <div
           className="modal-overlay"
