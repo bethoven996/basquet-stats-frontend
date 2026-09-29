@@ -225,6 +225,8 @@ function App() {
     ) {
       return;
     }
+    axios;
+    console.log("Borrando jugador, token:", token);
     axios
       .delete(`${API_URL}/jugadores/${jugador.id}`, headerAuth())
       .then(() => {
