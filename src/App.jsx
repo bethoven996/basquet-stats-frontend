@@ -217,6 +217,26 @@ function App() {
         setSubiendoFoto(false);
       });
   };
+  const eliminarJugador = (jugador) => {
+    if (
+      !window.confirm(
+        `¿Eliminar a ${jugador.nombre}? Esta acción no se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+    axios
+      .delete(`${API_URL}/jugadores/${jugador.id}`, headerAuth())
+      .then(() => {
+        cargarJugadores();
+        cargarEstadisticas();
+        setJugadorSeleccionado(null);
+      })
+      .catch((error) => {
+        console.error("Error eliminando jugador:", error);
+        alert("No se pudo eliminar el jugador.");
+      });
+  };
 
   const abrirModalNuevoJugador = () => {
     if (!token) {
@@ -1157,7 +1177,14 @@ function App() {
                               >
                                 Exportar PDF
                               </button>
-
+                              {token && (
+                                <button
+                                  className="btn-eliminar"
+                                  onClick={() => eliminarJugador(jugadorActual)}
+                                >
+                                  Eliminar jugador
+                                </button>
+                              )}
                               <div className="perfil-stats">
                                 <div>
                                   <strong>{jugadorActual.edad ?? "-"}</strong>

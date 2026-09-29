@@ -680,3 +680,19 @@ input[type="checkbox"]:disabled {
 .btn-pdf:hover {
   background: var(--accent-soft, rgba(232, 99, 28, 0.12));
 }
+.btn-eliminar {
+  background: transparent;
+  border: 1px solid #e85c5c;
+  color: #e85c5c;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.btn-eliminar:hover {
+  background: rgba(232, 92, 92, 0.12);
+}
