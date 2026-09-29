@@ -90,6 +90,7 @@ function App() {
   });
   const [guardandoPartido, setGuardandoPartido] = useState(false);
   const [errorPartido, setErrorPartido] = useState("");
+  const [jugadorABorrar, setJugadorABorrar] = useState(null);
 
   const porPagina = 50;
 
@@ -217,26 +218,19 @@ function App() {
         setSubiendoFoto(false);
       });
   };
-  const eliminarJugador = (jugador) => {
-    if (
-      !window.confirm(
-        `¿Eliminar a ${jugador.nombre}? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
-    axios;
-    console.log("Borrando jugador, token:", token);
+  const confirmarEliminarJugador = () => {
+    if (!jugadorABorrar) return;
     axios
-      .delete(`${API_URL}/jugadores/${jugador.id}`, headerAuth())
+      .delete(`${API_URL}/jugadores/${jugadorABorrar.id}`, headerAuth())
       .then(() => {
         cargarJugadores();
         cargarEstadisticas();
         setJugadorSeleccionado(null);
+        setJugadorABorrar(null);
       })
       .catch((error) => {
         console.error("Error eliminando jugador:", error);
-        alert("No se pudo eliminar el jugador.");
+        setJugadorABorrar(null);
       });
   };
 
@@ -1464,6 +1458,32 @@ function App() {
                 disabled={creandoUsuario}
               >
                 {creandoUsuario ? "Creando..." : "Crear usuario"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {jugadorABorrar && (
+        <div className="modal-overlay" onClick={() => setJugadorABorrar(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Eliminar jugador</h3>
+            <p style={{ color: "var(--text-dim)", fontSize: 14 }}>
+              ¿Eliminar a <strong>{jugadorABorrar.nombre}</strong>? Esta acción
+              no se puede deshacer.
+            </p>
+            <div className="modal-acciones">
+              <button
+                className="btn-secundario"
+                onClick={() => setJugadorABorrar(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-eliminar"
+                onClick={confirmarEliminarJugador}
+              >
+                Eliminar
               </button>
             </div>
           </div>
