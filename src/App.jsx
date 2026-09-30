@@ -55,6 +55,7 @@ function App() {
   const [pagina, setPagina] = useState(0);
   const [jugadorSeleccionado, setJugadorSeleccionado] = useState(null);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [fotosWikipedia, setFotosWikipedia] = useState({});
   const [modalAbierto, setModalAbierto] = useState(false);
   const [nuevoJugador, setNuevoJugador] = useState(JUGADOR_VACIO);
   const [fotoNuevoJugador, setFotoNuevoJugador] = useState(null);
@@ -110,6 +111,12 @@ function App() {
       .catch((error) => console.error("Error trayendo partidos:", error));
   }, []);
 
+  useEffect(() => {
+    if (jugadorSeleccionado) {
+      buscarFotoWikipedia(jugadorSeleccionado.nombre);
+    }
+  }, [jugadorSeleccionado]);
+
   const headerAuth = () => ({
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -137,6 +144,28 @@ function App() {
     if (jugador.foto_url) return jugador.foto_url;
     const seed = encodeURIComponent(jugador.nombre);
     return `https://api.dicebear.com/7.x/initials/svg?seed=${seed}&backgroundColor=E8631C,4FA184,C68E4E`;
+  };
+
+  const buscarFotoWikipedia = (nombre) => {
+    if (fotosWikipedia[nombre] !== undefined) return;
+    fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(nombre)}`,
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const url = data && data.thumbnail ? data.thumbnail.source : null;
+        setFotosWikipedia((prev) => ({ ...prev, [nombre]: url }));
+      })
+      .catch(() => {
+        setFotosWikipedia((prev) => ({ ...prev, [nombre]: null }));
+      });
+  };
+
+  const avatarPerfilUrl = (jugador) => {
+    if (jugador.foto_url) return jugador.foto_url;
+    const real = fotosWikipedia[jugador.nombre];
+    if (real) return real;
+    return avatarUrl(jugador);
   };
 
   const abrirLogin = () => {
@@ -218,6 +247,7 @@ function App() {
         setSubiendoFoto(false);
       });
   };
+
   const confirmarEliminarJugador = () => {
     if (!jugadorABorrar) return;
     axios
@@ -1133,7 +1163,7 @@ function App() {
                             <div className="perfil-header">
                               <div className="perfil-avatar-wrap">
                                 <img
-                                  src={avatarUrl(jugadorActual)}
+                                  src={avatarPerfilUrl(jugadorActual)}
                                   alt={jugadorActual.nombre}
                                   width="64"
                                   height="64"
