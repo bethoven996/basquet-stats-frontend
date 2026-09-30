@@ -1176,7 +1176,9 @@ function App() {
                               {token && (
                                 <button
                                   className="btn-eliminar"
-                                  onClick={() => eliminarJugador(jugadorActual)}
+                                  onClick={() =>
+                                    setJugadorABorrar(jugadorActual)
+                                  }
                                 >
                                   Eliminar jugador
                                 </button>
